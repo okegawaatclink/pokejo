@@ -414,7 +414,7 @@ export default function AdminPage() {
             <p className="text-xs text-white/40">読み込み中...</p>
           )}
           <p className="text-[11px] text-white/40 break-all">
-            エンドポイントURL: {origin ? `${origin}/store/${selectedStore.qrToken}` : "取得中..."}
+            エンドポイントURL: {origin ? `${origin}${BASE_PATH}/store/${selectedStore.qrToken}` : "取得中..."}
           </p>
 
           <h2 className="font-bold text-sm mt-2">店舗名を変更</h2>
@@ -488,7 +488,7 @@ export default function AdminPage() {
                 <p className="text-xs text-white/40">読み込み中...</p>
               )}
               <p className="text-[11px] text-white/40 break-all">
-                エンドポイントURL: {origin ? `${origin}/cast/${selectedCast.qrToken}` : "取得中..."}
+                エンドポイントURL: {origin ? `${origin}${BASE_PATH}/cast/${selectedCast.qrToken}` : "取得中..."}
               </p>
 
               <h2 className="font-bold text-sm mt-2">嬢名を変更</h2>
