@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(sqlite3 ./data/app.db \".tables\")",
+      "Bash(sqlite3 ./data/app.db \"select name, qrToken from Store where name='CARAT本店';\")",
+      "Bash(node screenshot2.mjs)",
+      "Bash(lsof -ti:3000 -sTCP:LISTEN)",
+      "Bash(xargs -r kill)",
+      "Bash(npm uninstall *)",
+      "Bash(timeout 30 bash -c 'until curl -sf http://localhost:3000 >/dev/null; do sleep 1; done')",
+      "Bash(curl -sf http://localhost:3000)",
+      "Bash(break)",
+      "Bash(xargs -I{} echo {})",
+      "Bash(node -e ' *)",
+      "Bash(aws --version)",
+      "Bash(aws sts *)",
+      "Bash(aws configure *)",
+      "Bash(aws ec2 *)",
+      "Bash(aws route53 *)",
+      "Bash(gh repo *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" https://github.com/okegawaatclink/pokejo)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" https://api.github.com/repos/okegawaatclink/pokejo)",
+      "Bash(chmod +x /Users/oke/poke-jou-app/deploy/*.sh)"
+    ]
+  }
+}
