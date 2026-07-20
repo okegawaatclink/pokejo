@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { BASE_PATH } from "@/lib/basePath";
 
 export type PokeCardData = {
   id: string;
@@ -54,7 +55,11 @@ export default function PokeCard({
           </div>
         ) : (
           <Image
-            src={cast.imageUrl}
+            src={
+              cast.imageUrl.startsWith("/") && !cast.imageUrl.startsWith(BASE_PATH)
+                ? `${BASE_PATH}${cast.imageUrl}`
+                : cast.imageUrl
+            }
             alt={title}
             fill
             sizes="(max-width: 768px) 45vw, 220px"
