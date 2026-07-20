@@ -467,6 +467,29 @@ export function getCardById(id: string): CardRow | undefined {
   };
 }
 
+export function updateCard(input: {
+  id: string;
+  title: string;
+  oddsWeight: number;
+  rarity: string;
+  flavorText?: string;
+}): CardRow | undefined {
+  const db = getDb();
+  const oddsWeight = normalizeOddsWeight(input.oddsWeight);
+  db.prepare(
+    `UPDATE Card
+     SET title = ?, oddsWeight = ?, rarity = ?, flavorText = ?
+     WHERE id = ?`
+  ).run(
+    input.title,
+    oddsWeight,
+    input.rarity || "N",
+    input.flavorText || null,
+    input.id
+  );
+  return getCardById(input.id);
+}
+
 export type AcquisitionType = "store" | "cast";
 
 export type AcquisitionRow = {

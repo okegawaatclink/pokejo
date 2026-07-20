@@ -31,6 +31,13 @@ type Card = {
   flavorText: string | null;
 };
 
+type CardEditForm = {
+  title: string;
+  oddsWeight: string;
+  rarity: string;
+  flavorText: string;
+};
+
 const RARITIES = ["N", "R", "SR", "UR"];
 
 export default function AdminPage() {
@@ -56,6 +63,7 @@ export default function AdminPage() {
     rarity: "N",
     flavorText: "",
   });
+  const [cardEditForms, setCardEditForms] = useState<Record<string, CardEditForm>>({});
   const [cardFile, setCardFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -122,6 +130,19 @@ export default function AdminPage() {
     if (res.ok) {
       const data = await res.json();
       setCards(data.cards);
+      setCardEditForms(
+        Object.fromEntries(
+          (data.cards as Card[]).map((card) => [
+            card.id,
+            {
+              title: card.title,
+              oddsWeight: String(card.oddsWeight),
+              rarity: card.rarity,
+              flavorText: card.flavorText ?? "",
+            },
+          ])
+        )
+      );
     }
   }
 
@@ -152,6 +173,7 @@ export default function AdminPage() {
     setSelectedCastId(null);
     setEditCastName("");
     setCards([]);
+    setCardEditForms({});
     setStoreQrUrl(null);
     setCastQrUrl(null);
     loadCasts(store.id);
@@ -162,9 +184,25 @@ export default function AdminPage() {
     setSelectedCastId(cast.id);
     setEditCastName(cast.name);
     setCards([]);
+    setCardEditForms({});
     setCastQrUrl(null);
     loadCards(cast.id);
     loadQr(cast.qrToken, "cast");
+  }
+
+  function updateCardEditForm(cardId: string, patch: Partial<CardEditForm>) {
+    setCardEditForms((forms) => ({
+      ...forms,
+      [cardId]: {
+        ...(forms[cardId] ?? {
+          title: "",
+          oddsWeight: "1",
+          rarity: "N",
+          flavorText: "",
+        }),
+        ...patch,
+      },
+    }));
   }
 
   async function handleRenameStore(e: React.FormEvent) {
@@ -320,6 +358,51 @@ export default function AdminPage() {
       await loadCasts(selectedStoreId);
       await loadStores();
       setNotice("カードを登録しました");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleUpdateCard(e: React.FormEvent, cardId: string) {
+    e.preventDefault();
+    if (!selectedCastId || !selectedStoreId) return;
+    const form = cardEditForms[cardId];
+    if (!form || !form.title.trim()) {
+      setNotice("カード種類名は必須です");
+      return;
+    }
+    const oddsWeight = Number(form.oddsWeight);
+    if (!Number.isFinite(oddsWeight) || oddsWeight <= 0) {
+      setNotice("当選確率(重み)は0より大きい数値で入力してください");
+      return;
+    }
+
+    setBusy(true);
+    setNotice(null);
+    try {
+      const res = await fetch(`${BASE_PATH}/api/admin/cards`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-passcode": passcode,
+        },
+        body: JSON.stringify({
+          id: cardId,
+          title: form.title.trim(),
+          oddsWeight,
+          rarity: form.rarity,
+          flavorText: form.flavorText,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setNotice(data.error ?? "カードの更新に失敗しました");
+        return;
+      }
+      await loadCards(selectedCastId);
+      await loadCasts(selectedStoreId);
+      await loadStores();
+      setNotice("カードを更新しました");
     } finally {
       setBusy(false);
     }
@@ -566,14 +649,78 @@ export default function AdminPage() {
 
               <h2 className="font-bold text-sm mt-4">登録済みカード</h2>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {cards.map((card) => (
-                  <div key={card.id} className="flex flex-col gap-1">
-                    <PokeCard cast={card} />
-                    <p className="text-[11px] text-white/50 text-center">
-                      当選重み: {card.oddsWeight}
-                    </p>
-                  </div>
-                ))}
+                {cards.map((card) => {
+                  const editForm = cardEditForms[card.id] ?? {
+                    title: card.title,
+                    oddsWeight: String(card.oddsWeight),
+                    rarity: card.rarity,
+                    flavorText: card.flavorText ?? "",
+                  };
+
+                  return (
+                    <div key={card.id} className="flex flex-col gap-2">
+                      <PokeCard cast={card} />
+                      <form
+                        onSubmit={(e) => handleUpdateCard(e, card.id)}
+                        className="flex flex-col gap-2 rounded-lg border border-white/10 bg-white/5 p-2"
+                      >
+                        <input
+                          value={editForm.title}
+                          onChange={(e) =>
+                            updateCardEditForm(card.id, { title: e.target.value })
+                          }
+                          placeholder="カード種類名"
+                          className="rounded bg-white/10 border border-white/10 px-2 py-1 text-xs outline-none focus:border-pikablue"
+                        />
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="number"
+                            min="0.01"
+                            step="0.01"
+                            value={editForm.oddsWeight}
+                            onChange={(e) =>
+                              updateCardEditForm(card.id, {
+                                oddsWeight: e.target.value,
+                              })
+                            }
+                            placeholder="当選重み"
+                            className="rounded bg-white/10 border border-white/10 px-2 py-1 text-xs outline-none focus:border-pikablue"
+                          />
+                          <select
+                            value={editForm.rarity}
+                            onChange={(e) =>
+                              updateCardEditForm(card.id, { rarity: e.target.value })
+                            }
+                            className="rounded bg-white/10 border border-white/10 px-2 py-1 text-xs outline-none"
+                          >
+                            {RARITIES.map((rarity) => (
+                              <option key={rarity} value={rarity} className="text-black">
+                                {rarity}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <textarea
+                          value={editForm.flavorText}
+                          onChange={(e) =>
+                            updateCardEditForm(card.id, {
+                              flavorText: e.target.value,
+                            })
+                          }
+                          placeholder="フレーバーテキスト（任意）"
+                          rows={2}
+                          className="rounded bg-white/10 border border-white/10 px-2 py-1 text-xs outline-none focus:border-pikablue"
+                        />
+                        <button
+                          disabled={busy}
+                          className="rounded bg-white/20 px-3 py-1.5 text-xs font-bold disabled:opacity-50"
+                        >
+                          更新
+                        </button>
+                      </form>
+                    </div>
+                  );
+                })}
                 {cards.length === 0 && (
                   <p className="text-xs text-white/40 col-span-full">
                     まだカードがありません。

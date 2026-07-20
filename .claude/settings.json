@@ -31,7 +31,19 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" -X POST http://localhost:3055/pokejo/api/admin/login)",
       "Bash(curl -sI http://localhost:3055/pokejo/collection)",
       "Bash(pkill -f \"next start -p 3055\")",
-      "Bash(grep -rln '\"/api\\\\|`/api\\\\|fetch\\(' /Users/oke/poke-jou-app/test)"
+      "Bash(grep -rln '\"/api\\\\|`/api\\\\|fetch\\(' /Users/oke/poke-jou-app/test)",
+      "Bash(lsof -i :3000 -sTCP:LISTEN)",
+      "Bash(ssh -i ~/.ssh/signiaweb.pem -o StrictHostKeyChecking=accept-new -o ConnectTimeout=8 ec2-user@54.65.214.228 ' *)",
+      "Bash(ssh -i ~/.ssh/signiaweb.pem -o ConnectTimeout=8 ec2-user@54.65.214.228 ' *)",
+      "Bash(git fetch *)",
+      "Bash(ssh -i *)",
+      "Bash(curl -s -o /dev/null -w \"外部 /pokejo: %{http_code}\\\\n\" http://54.65.214.228:3000/pokejo)",
+      "Bash(git add *)",
+      "Bash(git restore *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(scp -i ~/.ssh/signiaweb.pem /private/tmp/claude-501/-Users-oke-poke-jou-app/22d30b2d-6a78-402f-9094-a1a5a32fce20/scratchpad/query_cards.js ec2-user@54.65.214.228:/tmp/query_cards.js)",
+      "Bash(ssh -i ~/.ssh/signiaweb.pem -o ConnectTimeout=8 ec2-user@54.65.214.228 'cd /home/ec2-user/pokejo && node /tmp/query_cards.js')"
     ]
   }
 }

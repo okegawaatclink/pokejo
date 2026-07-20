@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
-import { createCard, getCastById, listCardsByCast } from "@/lib/db";
+import { createCard, getCastById, listCardsByCast, updateCard } from "@/lib/db";
 import { isAdminAuthorized } from "@/lib/adminAuth";
 
 const UPLOAD_DIR = path.join(process.cwd(), "data", "uploads");
@@ -81,6 +81,37 @@ export async function POST(req: NextRequest) {
     rarity,
     flavorText,
   });
+
+  return NextResponse.json({ card });
+}
+
+export async function PATCH(req: NextRequest) {
+  if (!isAdminAuthorized(req)) {
+    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  }
+
+  const body = await req.json().catch(() => null);
+  const id = (body?.id as string | undefined)?.trim();
+  const title = (body?.title as string | undefined)?.trim();
+  const oddsWeight = Number(body?.oddsWeight ?? "1");
+  const rarity = (body?.rarity as string | undefined) || "N";
+  const flavorText = (body?.flavorText as string | undefined) || undefined;
+
+  if (!id || !title) {
+    return NextResponse.json({ error: "id と title は必須です" }, { status: 400 });
+  }
+
+  if (!Number.isFinite(oddsWeight) || oddsWeight <= 0) {
+    return NextResponse.json(
+      { error: "当選確率(重み)は0より大きい数値で入力してください" },
+      { status: 400 }
+    );
+  }
+
+  const card = updateCard({ id, title, oddsWeight, rarity, flavorText });
+  if (!card) {
+    return NextResponse.json({ error: "カードが見つかりません" }, { status: 404 });
+  }
 
   return NextResponse.json({ card });
 }
