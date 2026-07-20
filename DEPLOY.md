@@ -106,6 +106,9 @@ sudo systemctl restart pokejou
   （例: `http://<ホスト>/pokejo`）。この設定を変更した場合は再ビルドが必要です。
 - `data/app.db` はSQLiteファイルで、EC2上のEBSボリュームに保存されます（インスタンス
   terminate時は失われるため、必要であれば定期的にS3等へバックアップしてください）。
-- アップロード画像 (`public/uploads`) も同様にEBS上に保存されます。
+- アップロード画像 (`data/uploads`) も同様にEBS上に保存されます。
+  (以前は`public/uploads`に保存していましたが、`next start`は起動後に追加された
+  `public`配下のファイルを配信できないため、動的APIルート経由で配信する
+  `data/uploads`に変更しています。)
 - リポジトリに `data/app.db-shm` / `data/app.db-wal` という開発時の一時ファイルが誤って
   コミットされています。実害はほぼありませんが、気になる場合は削除してコミットしてください。

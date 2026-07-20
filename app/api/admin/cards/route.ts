@@ -5,7 +5,7 @@ import crypto from "node:crypto";
 import { createCard, getCastById, listCardsByCast } from "@/lib/db";
 import { isAdminAuthorized } from "@/lib/adminAuth";
 
-const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
+const UPLOAD_DIR = path.join(process.cwd(), "data", "uploads");
 
 export async function GET(req: NextRequest) {
   if (!isAdminAuthorized(req)) {
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
   const card = createCard({
     castId,
     title,
-    imageUrl: `/uploads/${fileName}`,
+    imageUrl: `/api/uploads/${fileName}`,
     oddsWeight,
     rarity,
     flavorText,
