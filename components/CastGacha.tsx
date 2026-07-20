@@ -10,13 +10,17 @@ type CardState = PokeCardData & { collected: boolean };
 
 export default function CastGacha({
   castId,
+  castCode,
   castName,
+  storeCode,
   storeName,
   cards,
   drawDoneCard,
 }: {
   castId: string;
+  castCode: string;
   castName: string;
+  storeCode: string;
   storeName: string;
   cards: CardState[];
   drawDoneCard: PokeCardData | null;
@@ -69,8 +73,13 @@ export default function CastGacha({
     <div className="flex flex-col gap-6">
       <div className="text-center">
         <p className="text-xs text-white/50">嬢QR</p>
-        <h1 className="text-2xl font-display font-extrabold text-gradient-gold">{castName}</h1>
-        <p className="text-sm text-white/50 mt-1">{storeName}</p>
+        <h1 className="text-2xl font-display font-extrabold text-gradient-gold">
+          #{castCode} {castName}
+        </h1>
+        <p className="text-sm text-white/50 mt-1">
+          {storeCode ? `#${storeCode} ` : ""}
+          {storeName}
+        </p>
         <p className="text-sm text-white/60 mt-2">
           この嬢の全カードからランダムで1枚当たります。
         </p>
@@ -92,7 +101,9 @@ export default function CastGacha({
       {message && <p className="text-center text-sm text-amber-400">{message}</p>}
 
       <div>
-        <p className="text-sm font-bold mb-3">{castName} のカード一覧</p>
+        <p className="text-sm font-bold mb-3">
+          #{castCode} {castName} のカード一覧
+        </p>
         {cardList.length === 0 ? (
           <p className="text-sm text-white/50">まだカードが登録されていません。</p>
         ) : (

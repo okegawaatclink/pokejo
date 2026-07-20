@@ -8,13 +8,15 @@ import { BASE_PATH } from "@/lib/basePath";
 
 export default function StoreGacha({
   storeId,
+  storeCode,
   storeName,
   casts,
   randomDoneCard,
 }: {
   storeId: string;
+  storeCode: string;
   storeName: string;
-  casts: { id: string; name: string; cardCount: number }[];
+  casts: { id: string; code: string; name: string; cardCount: number }[];
   randomDoneCard: PokeCardData | null;
 }) {
   const [drawnCard, setDrawnCard] = useState<PokeCardData | null>(randomDoneCard);
@@ -56,7 +58,9 @@ export default function StoreGacha({
     <div className="flex flex-col gap-6">
       <div className="text-center">
         <p className="text-xs text-white/50">店舗QR</p>
-        <h1 className="text-2xl font-display font-extrabold text-gradient-gold">{storeName}</h1>
+        <h1 className="text-2xl font-display font-extrabold text-gradient-gold">
+          #{storeCode} {storeName}
+        </h1>
         <p className="text-sm text-white/60 mt-2">
           この店舗に在籍する嬢の全カードからランダムで1枚当たります。
         </p>
@@ -90,7 +94,9 @@ export default function StoreGacha({
                 key={cast.id}
                 className="surface-card rounded-xl px-4 py-3"
               >
-                <p className="font-bold text-sm">{cast.name}</p>
+                <p className="font-bold text-sm">
+                  #{cast.code} {cast.name}
+                </p>
                 <p className="text-xs text-white/50 mt-1">全{cast.cardCount}種のカード</p>
               </div>
             ))}

@@ -5,13 +5,16 @@ import { BASE_PATH } from "@/lib/basePath";
 
 export type PokeCardData = {
   id: string;
+  code?: string;
   title?: string;
   name?: string;
   castName?: string;
+  castCode?: string;
   imageUrl: string;
   rarity: string;
   flavorText?: string | null;
   storeName?: string;
+  storeCode?: string;
 };
 
 const RARITY_LABEL: Record<string, string> = {
@@ -35,7 +38,12 @@ export default function PokeCard({
   const sizeClass =
     size === "sm" ? "w-full" : size === "lg" ? "w-full max-w-xs" : "w-full";
   const title = cast.title ?? cast.name ?? "カード";
-  const subtitle = cast.castName ?? null;
+  const subtitle = cast.castName
+    ? `${cast.castCode ? `#${cast.castCode} ` : ""}${cast.castName}`
+    : null;
+  const storeLabel = cast.storeName
+    ? `${cast.storeCode ? `#${cast.storeCode} ` : ""}${cast.storeName}`
+    : null;
 
   return (
     <button
@@ -80,13 +88,13 @@ export default function PokeCard({
       </div>
       <div className="mt-2 px-1">
         <p className="font-display font-bold text-sm truncate">
-          {locked ? "？？？" : title}
+          {locked ? "？？？" : `${cast.code ? `#${cast.code} ` : ""}${title}`}
         </p>
         {subtitle && (
           <p className="text-[11px] text-white/60 truncate">{subtitle}</p>
         )}
-        {cast.storeName && (
-          <p className="text-[11px] text-white/40 truncate">{cast.storeName}</p>
+        {storeLabel && (
+          <p className="text-[11px] text-white/40 truncate">{storeLabel}</p>
         )}
       </div>
     </button>

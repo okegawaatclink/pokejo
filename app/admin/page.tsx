@@ -6,6 +6,7 @@ import { BASE_PATH } from "@/lib/basePath";
 
 type Store = {
   id: string;
+  code: string;
   name: string;
   qrToken: string;
   castCount: number;
@@ -15,6 +16,7 @@ type Store = {
 type Cast = {
   id: string;
   storeId: string;
+  code: string;
   name: string;
   qrToken: string;
   cardCount: number;
@@ -23,6 +25,7 @@ type Cast = {
 type Card = {
   id: string;
   castId: string;
+  code: string;
   title: string;
   castName?: string;
   imageUrl: string;
@@ -32,6 +35,7 @@ type Card = {
 };
 
 type CardEditForm = {
+  code: string;
   title: string;
   oddsWeight: string;
   rarity: string;
@@ -54,10 +58,15 @@ export default function AdminPage() {
   const [castQrUrl, setCastQrUrl] = useState<string | null>(null);
 
   const [newStoreName, setNewStoreName] = useState("");
+  const [newStoreCode, setNewStoreCode] = useState("");
   const [newCastName, setNewCastName] = useState("");
+  const [newCastCode, setNewCastCode] = useState("");
+  const [editStoreCode, setEditStoreCode] = useState("");
   const [editStoreName, setEditStoreName] = useState("");
+  const [editCastCode, setEditCastCode] = useState("");
   const [editCastName, setEditCastName] = useState("");
   const [cardForm, setCardForm] = useState({
+    code: "",
     title: "",
     oddsWeight: "1",
     rarity: "N",
@@ -135,6 +144,7 @@ export default function AdminPage() {
           (data.cards as Card[]).map((card) => [
             card.id,
             {
+              code: card.code,
               title: card.title,
               oddsWeight: String(card.oddsWeight),
               rarity: card.rarity,
@@ -169,8 +179,10 @@ export default function AdminPage() {
 
   function selectStore(store: Store) {
     setSelectedStoreId(store.id);
+    setEditStoreCode(store.code);
     setEditStoreName(store.name);
     setSelectedCastId(null);
+    setEditCastCode("");
     setEditCastName("");
     setCards([]);
     setCardEditForms({});
@@ -182,6 +194,7 @@ export default function AdminPage() {
 
   function selectCast(cast: Cast) {
     setSelectedCastId(cast.id);
+    setEditCastCode(cast.code);
     setEditCastName(cast.name);
     setCards([]);
     setCardEditForms({});
@@ -195,6 +208,7 @@ export default function AdminPage() {
       ...forms,
       [cardId]: {
         ...(forms[cardId] ?? {
+          code: "",
           title: "",
           oddsWeight: "1",
           rarity: "N",
@@ -207,7 +221,7 @@ export default function AdminPage() {
 
   async function handleRenameStore(e: React.FormEvent) {
     e.preventDefault();
-    if (!selectedStoreId || !editStoreName.trim()) return;
+    if (!selectedStoreId || !editStoreCode.trim() || !editStoreName.trim()) return;
     setBusy(true);
     setNotice(null);
     try {
@@ -217,7 +231,11 @@ export default function AdminPage() {
           "Content-Type": "application/json",
           "x-admin-passcode": passcode,
         },
-        body: JSON.stringify({ id: selectedStoreId, name: editStoreName.trim() }),
+        body: JSON.stringify({
+          id: selectedStoreId,
+          code: editStoreCode.trim(),
+          name: editStoreName.trim(),
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -233,7 +251,7 @@ export default function AdminPage() {
 
   async function handleRenameCast(e: React.FormEvent) {
     e.preventDefault();
-    if (!selectedCastId || !selectedStoreId || !editCastName.trim()) return;
+    if (!selectedCastId || !selectedStoreId || !editCastCode.trim() || !editCastName.trim()) return;
     setBusy(true);
     setNotice(null);
     try {
@@ -243,7 +261,11 @@ export default function AdminPage() {
           "Content-Type": "application/json",
           "x-admin-passcode": passcode,
         },
-        body: JSON.stringify({ id: selectedCastId, name: editCastName.trim() }),
+        body: JSON.stringify({
+          id: selectedCastId,
+          code: editCastCode.trim(),
+          name: editCastName.trim(),
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -271,13 +293,14 @@ export default function AdminPage() {
           "Content-Type": "application/json",
           "x-admin-passcode": passcode,
         },
-        body: JSON.stringify({ name: newStoreName.trim() }),
+        body: JSON.stringify({ code: newStoreCode.trim(), name: newStoreName.trim() }),
       });
       const data = await res.json();
       if (!res.ok) {
         setNotice(data.error ?? "作成に失敗しました");
         return;
       }
+      setNewStoreCode("");
       setNewStoreName("");
       await loadStores();
       selectStore(data.store);
@@ -302,13 +325,18 @@ export default function AdminPage() {
           "Content-Type": "application/json",
           "x-admin-passcode": passcode,
         },
-        body: JSON.stringify({ storeId: selectedStoreId, name: newCastName.trim() }),
+        body: JSON.stringify({
+          storeId: selectedStoreId,
+          code: newCastCode.trim(),
+          name: newCastName.trim(),
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
         setNotice(data.error ?? "登録に失敗しました");
         return;
       }
+      setNewCastCode("");
       setNewCastName("");
       await loadCasts(selectedStoreId);
       await loadStores();
@@ -336,6 +364,7 @@ export default function AdminPage() {
     try {
       const fd = new FormData();
       fd.append("castId", selectedCastId);
+      fd.append("code", cardForm.code.trim());
       fd.append("title", cardForm.title.trim());
       fd.append("oddsWeight", String(oddsWeight));
       fd.append("rarity", cardForm.rarity);
@@ -352,7 +381,7 @@ export default function AdminPage() {
         setNotice(data.error ?? "登録に失敗しました");
         return;
       }
-      setCardForm({ title: "", oddsWeight: "1", rarity: "N", flavorText: "" });
+      setCardForm({ code: "", title: "", oddsWeight: "1", rarity: "N", flavorText: "" });
       setCardFile(null);
       await loadCards(selectedCastId);
       await loadCasts(selectedStoreId);
@@ -367,8 +396,8 @@ export default function AdminPage() {
     e.preventDefault();
     if (!selectedCastId || !selectedStoreId) return;
     const form = cardEditForms[cardId];
-    if (!form || !form.title.trim()) {
-      setNotice("カード種類名は必須です");
+    if (!form || !form.code.trim() || !form.title.trim()) {
+      setNotice("カード番号とカード種類名は必須です");
       return;
     }
     const oddsWeight = Number(form.oddsWeight);
@@ -388,6 +417,7 @@ export default function AdminPage() {
         },
         body: JSON.stringify({
           id: cardId,
+          code: form.code.trim(),
           title: form.title.trim(),
           oddsWeight,
           rarity: form.rarity,
@@ -457,6 +487,7 @@ export default function AdminPage() {
                   : "border-white/10 bg-white/5"
               }`}
             >
+              <span className="text-white/50 text-xs mr-2">#{store.code}</span>
               {store.name}{" "}
               <span className="text-white/40 text-xs">
                 （嬢 {store.castCount} 人 / カード {store.cardCount} 枚）
@@ -468,6 +499,12 @@ export default function AdminPage() {
           )}
         </div>
         <form onSubmit={handleCreateStore} className="flex gap-2">
+          <input
+            value={newStoreCode}
+            onChange={(e) => setNewStoreCode(e.target.value)}
+            placeholder="番号"
+            className="w-20 rounded-lg bg-white/10 border border-white/10 px-3 py-2 text-sm outline-none focus:border-pikablue"
+          />
           <input
             value={newStoreName}
             onChange={(e) => setNewStoreName(e.target.value)}
@@ -503,6 +540,12 @@ export default function AdminPage() {
           <h2 className="font-bold text-sm mt-2">店舗名を変更</h2>
           <form onSubmit={handleRenameStore} className="flex gap-2">
             <input
+              value={editStoreCode}
+              onChange={(e) => setEditStoreCode(e.target.value)}
+              placeholder="番号"
+              className="w-20 rounded-lg bg-white/10 border border-white/10 px-3 py-2 text-sm outline-none focus:border-pikablue"
+            />
+            <input
               value={editStoreName}
               onChange={(e) => setEditStoreName(e.target.value)}
               placeholder="店舗名"
@@ -518,6 +561,12 @@ export default function AdminPage() {
 
           <h2 className="font-bold text-sm mt-4">在籍する嬢を登録</h2>
           <form onSubmit={handleCreateCast} className="flex flex-col gap-3">
+            <input
+              value={newCastCode}
+              onChange={(e) => setNewCastCode(e.target.value)}
+              placeholder="嬢番号（空欄なら自動採番）"
+              className="rounded-lg bg-white/10 border border-white/10 px-3 py-2 text-sm outline-none focus:border-pikablue"
+            />
             <input
               value={newCastName}
               onChange={(e) => setNewCastName(e.target.value)}
@@ -546,6 +595,7 @@ export default function AdminPage() {
                     : "border-white/10 bg-white/5"
                 }`}
               >
+                <span className="text-white/50 text-xs mr-2">#{cast.code}</span>
                 {cast.name}
                 <span className="text-white/40 text-xs ml-2">
                   （カード {cast.cardCount} 枚）
@@ -577,6 +627,12 @@ export default function AdminPage() {
               <h2 className="font-bold text-sm mt-2">嬢名を変更</h2>
               <form onSubmit={handleRenameCast} className="flex gap-2">
                 <input
+                  value={editCastCode}
+                  onChange={(e) => setEditCastCode(e.target.value)}
+                  placeholder="番号"
+                  className="w-20 rounded-lg bg-white/10 border border-white/10 px-3 py-2 text-sm outline-none focus:border-pikablue"
+                />
+                <input
                   value={editCastName}
                   onChange={(e) => setEditCastName(e.target.value)}
                   placeholder="嬢の名前"
@@ -592,6 +648,14 @@ export default function AdminPage() {
 
               <h2 className="font-bold text-sm mt-4">カード種類を登録</h2>
               <form onSubmit={handleCreateCard} className="flex flex-col gap-3">
+                <input
+                  value={cardForm.code}
+                  onChange={(e) =>
+                    setCardForm((form) => ({ ...form, code: e.target.value }))
+                  }
+                  placeholder="カード番号（空欄なら自動採番）"
+                  className="rounded-lg bg-white/10 border border-white/10 px-3 py-2 text-sm outline-none focus:border-pikablue"
+                />
                 <input
                   value={cardForm.title}
                   onChange={(e) =>
@@ -651,6 +715,7 @@ export default function AdminPage() {
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {cards.map((card) => {
                   const editForm = cardEditForms[card.id] ?? {
+                    code: card.code,
                     title: card.title,
                     oddsWeight: String(card.oddsWeight),
                     rarity: card.rarity,
@@ -664,6 +729,14 @@ export default function AdminPage() {
                         onSubmit={(e) => handleUpdateCard(e, card.id)}
                         className="flex flex-col gap-2 rounded-lg border border-white/10 bg-white/5 p-2"
                       >
+                        <input
+                          value={editForm.code}
+                          onChange={(e) =>
+                            updateCardEditForm(card.id, { code: e.target.value })
+                          }
+                          placeholder="カード番号"
+                          className="rounded bg-white/10 border border-white/10 px-2 py-1 text-xs outline-none focus:border-pikablue"
+                        />
                         <input
                           value={editForm.title}
                           onChange={(e) =>

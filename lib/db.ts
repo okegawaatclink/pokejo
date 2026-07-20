@@ -140,6 +140,64 @@ function ensureCardOddsWeight(db: Database.Database) {
   }
 }
 
+function formatCode(index: number): string {
+  return String(index).padStart(3, "0");
+}
+
+function nextCode(
+  db: Database.Database,
+  tableName: "Store" | "Cast" | "Card",
+  whereClause = "",
+  params: unknown[] = []
+): string {
+  const rows = db
+    .prepare(`SELECT code FROM ${tableName} ${whereClause}`)
+    .all(...params) as { code: string | null }[];
+  const maxCode = rows.reduce((max, row) => {
+    const codeNumber = Number(row.code);
+    return Number.isInteger(codeNumber) && codeNumber > max ? codeNumber : max;
+  }, 0);
+  return formatCode(maxCode + 1);
+}
+
+function ensureEntityCodes(db: Database.Database) {
+  if (!hasColumn(db, "Store", "code")) {
+    db.exec("ALTER TABLE Store ADD COLUMN code TEXT NOT NULL DEFAULT '';");
+  }
+  if (!hasColumn(db, "Cast", "code")) {
+    db.exec("ALTER TABLE Cast ADD COLUMN code TEXT NOT NULL DEFAULT '';");
+  }
+  if (!hasColumn(db, "Card", "code")) {
+    db.exec("ALTER TABLE Card ADD COLUMN code TEXT NOT NULL DEFAULT '';");
+  }
+
+  const stores = db
+    .prepare("SELECT id, code FROM Store ORDER BY createdAt ASC, id ASC")
+    .all() as { id: string; code: string | null }[];
+  const updateStoreCode = db.prepare("UPDATE Store SET code = ? WHERE id = ?");
+  for (const store of stores) {
+    if (!store.code?.trim()) updateStoreCode.run(nextCode(db, "Store"), store.id);
+  }
+
+  const casts = db
+    .prepare("SELECT id, storeId, code FROM Cast ORDER BY storeId ASC, createdAt ASC, id ASC")
+    .all() as { id: string; storeId: string; code: string | null }[];
+  const updateCastCode = db.prepare("UPDATE Cast SET code = ? WHERE id = ?");
+  for (const cast of casts) {
+    if (cast.code?.trim()) continue;
+    updateCastCode.run(nextCode(db, "Cast", "WHERE storeId = ?", [cast.storeId]), cast.id);
+  }
+
+  const cards = db
+    .prepare("SELECT id, castId, code FROM Card ORDER BY castId ASC, createdAt ASC, id ASC")
+    .all() as { id: string; castId: string; code: string | null }[];
+  const updateCardCode = db.prepare("UPDATE Card SET code = ? WHERE id = ?");
+  for (const card of cards) {
+    if (card.code?.trim()) continue;
+    updateCardCode.run(nextCode(db, "Card", "WHERE castId = ?", [card.castId]), card.id);
+  }
+}
+
 function normalizeOddsWeight(value: unknown): number {
   const weight = Number(value);
   if (!Number.isFinite(weight) || weight <= 0) return 1;
@@ -158,6 +216,7 @@ function getDb(): Database.Database {
       );
       CREATE TABLE IF NOT EXISTS Store (
         id TEXT PRIMARY KEY,
+        code TEXT NOT NULL DEFAULT '',
         name TEXT NOT NULL,
         qrToken TEXT NOT NULL UNIQUE,
         createdAt TEXT NOT NULL
@@ -165,6 +224,7 @@ function getDb(): Database.Database {
       CREATE TABLE IF NOT EXISTS Cast (
         id TEXT PRIMARY KEY,
         storeId TEXT NOT NULL REFERENCES Store(id) ON DELETE CASCADE,
+        code TEXT NOT NULL DEFAULT '',
         name TEXT NOT NULL,
         qrToken TEXT NOT NULL,
         createdAt TEXT NOT NULL
@@ -172,6 +232,7 @@ function getDb(): Database.Database {
       CREATE TABLE IF NOT EXISTS Card (
         id TEXT PRIMARY KEY,
         castId TEXT NOT NULL REFERENCES Cast(id) ON DELETE CASCADE,
+        code TEXT NOT NULL DEFAULT '',
         title TEXT NOT NULL,
         imageUrl TEXT NOT NULL,
         oddsWeight REAL NOT NULL DEFAULT 1,
@@ -194,6 +255,7 @@ function getDb(): Database.Database {
     ensureCastQrTokens(db);
     migrateLegacyCards(db);
     ensureCardOddsWeight(db);
+    ensureEntityCodes(db);
     migrateLegacyAcquisitions(db);
     db.exec("CREATE INDEX IF NOT EXISTS idx_card_cast ON Card (castId, createdAt);");
     global.__pokeJouDb = db;
@@ -231,20 +293,22 @@ export function ensureDevice(deviceId: string) {
 
 export type StoreRow = {
   id: string;
+  code: string;
   name: string;
   qrToken: string;
   createdAt: string;
 };
 
-export function createStore(name: string): StoreRow {
+export function createStore(input: { name: string; code?: string }): StoreRow {
   const db = getDb();
   const id = newId();
   const qrToken = newId();
   const createdAt = new Date().toISOString();
+  const code = input.code?.trim() || nextCode(db, "Store");
   db.prepare(
-    "INSERT INTO Store (id, name, qrToken, createdAt) VALUES (?, ?, ?, ?)"
-  ).run(id, name, qrToken, createdAt);
-  return { id, name, qrToken, createdAt };
+    "INSERT INTO Store (id, code, name, qrToken, createdAt) VALUES (?, ?, ?, ?, ?)"
+  ).run(id, code, input.name, qrToken, createdAt);
+  return { id, code, name: input.name, qrToken, createdAt };
 }
 
 export function listStores(): (StoreRow & { castCount: number; cardCount: number })[] {
@@ -282,15 +346,20 @@ export function getStoreById(id: string): StoreRow | undefined {
     | undefined;
 }
 
-export function updateStoreName(id: string, name: string): StoreRow | undefined {
+export function updateStore(input: { id: string; code: string; name: string }): StoreRow | undefined {
   const db = getDb();
-  db.prepare("UPDATE Store SET name = ? WHERE id = ?").run(name, id);
-  return getStoreById(id);
+  db.prepare("UPDATE Store SET code = ?, name = ? WHERE id = ?").run(
+    input.code,
+    input.name,
+    input.id
+  );
+  return getStoreById(input.id);
 }
 
 export type CastRow = {
   id: string;
   storeId: string;
+  code: string;
   name: string;
   qrToken: string;
   createdAt: string;
@@ -300,28 +369,32 @@ export type CastSummaryRow = CastRow & {
   cardCount: number;
 };
 
-export function createCast(input: { storeId: string; name: string }): CastRow {
+export function createCast(input: { storeId: string; code?: string; name: string }): CastRow {
   const db = getDb();
   const id = newId();
   const qrToken = newId();
   const createdAt = new Date().toISOString();
+  const code = input.code?.trim() || nextCode(db, "Cast", "WHERE storeId = ?", [
+    input.storeId,
+  ]);
 
   // 旧スキーマ( imageUrl 必須 )が残っているDBでも嬢追加できるよう互換INSERTを行う。
   if (hasColumn(db, "Cast", "imageUrl")) {
     db.prepare(
-      `INSERT INTO Cast (id, storeId, name, imageUrl, rarity, flavorText, qrToken, createdAt)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-    ).run(id, input.storeId, input.name, "", "N", null, qrToken, createdAt);
+      `INSERT INTO Cast (id, storeId, code, name, imageUrl, rarity, flavorText, qrToken, createdAt)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(id, input.storeId, code, input.name, "", "N", null, qrToken, createdAt);
   } else {
     db.prepare(
-      `INSERT INTO Cast (id, storeId, name, qrToken, createdAt)
-       VALUES (?, ?, ?, ?, ?)`
-    ).run(id, input.storeId, input.name, qrToken, createdAt);
+      `INSERT INTO Cast (id, storeId, code, name, qrToken, createdAt)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    ).run(id, input.storeId, code, input.name, qrToken, createdAt);
   }
 
   return {
     id,
     storeId: input.storeId,
+    code,
     name: input.name,
     qrToken,
     createdAt,
@@ -348,10 +421,14 @@ export function getCastById(id: string): CastRow | undefined {
   return db.prepare("SELECT * FROM Cast WHERE id = ?").get(id) as CastRow | undefined;
 }
 
-export function updateCastName(id: string, name: string): CastRow | undefined {
+export function updateCast(input: { id: string; code: string; name: string }): CastRow | undefined {
   const db = getDb();
-  db.prepare("UPDATE Cast SET name = ? WHERE id = ?").run(name, id);
-  return getCastById(id);
+  db.prepare("UPDATE Cast SET code = ?, name = ? WHERE id = ?").run(
+    input.code,
+    input.name,
+    input.id
+  );
+  return getCastById(input.id);
 }
 
 export function getCastByToken(qrToken: string): CastRow | undefined {
@@ -364,6 +441,7 @@ export function getCastByToken(qrToken: string): CastRow | undefined {
 export type CardRow = {
   id: string;
   castId: string;
+  code: string;
   title: string;
   imageUrl: string;
   oddsWeight: number;
@@ -371,12 +449,15 @@ export type CardRow = {
   flavorText: string | null;
   createdAt: string;
   castName?: string;
+  castCode?: string;
   storeId?: string;
   storeName?: string;
+  storeCode?: string;
 };
 
 export function createCard(input: {
   castId: string;
+  code?: string;
   title: string;
   imageUrl: string;
   oddsWeight?: number;
@@ -387,12 +468,16 @@ export function createCard(input: {
   const id = newId();
   const createdAt = new Date().toISOString();
   const oddsWeight = normalizeOddsWeight(input.oddsWeight);
+  const code = input.code?.trim() || nextCode(db, "Card", "WHERE castId = ?", [
+    input.castId,
+  ]);
   db.prepare(
-    `INSERT INTO Card (id, castId, title, imageUrl, oddsWeight, rarity, flavorText, createdAt)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    `INSERT INTO Card (id, castId, code, title, imageUrl, oddsWeight, rarity, flavorText, createdAt)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).run(
     id,
     input.castId,
+    code,
     input.title,
     input.imageUrl,
     oddsWeight,
@@ -403,6 +488,7 @@ export function createCard(input: {
   return {
     id,
     castId: input.castId,
+    code,
     title: input.title,
     imageUrl: input.imageUrl,
     oddsWeight,
@@ -416,7 +502,9 @@ export function listCardsByStore(storeId: string): CardRow[] {
   const db = getDb();
   return db
     .prepare(
-      `SELECT card.*, c.name as castName, s.id as storeId, s.name as storeName
+      `SELECT
+         card.*, c.code as castCode, c.name as castName,
+         s.id as storeId, s.code as storeCode, s.name as storeName
        FROM Card card
        JOIN Cast c ON c.id = card.castId
        JOIN Store s ON s.id = c.storeId
@@ -434,7 +522,9 @@ export function listCardsByCast(castId: string): CardRow[] {
   const db = getDb();
   return db
     .prepare(
-      `SELECT card.*, c.name as castName, s.id as storeId, s.name as storeName
+      `SELECT
+         card.*, c.code as castCode, c.name as castName,
+         s.id as storeId, s.code as storeCode, s.name as storeName
        FROM Card card
        JOIN Cast c ON c.id = card.castId
        JOIN Store s ON s.id = c.storeId
@@ -452,7 +542,9 @@ export function getCardById(id: string): CardRow | undefined {
   const db = getDb();
   const row = db
     .prepare(
-      `SELECT card.*, c.name as castName, s.id as storeId, s.name as storeName
+      `SELECT
+         card.*, c.code as castCode, c.name as castName,
+         s.id as storeId, s.code as storeCode, s.name as storeName
        FROM Card card
        JOIN Cast c ON c.id = card.castId
        JOIN Store s ON s.id = c.storeId
@@ -469,6 +561,7 @@ export function getCardById(id: string): CardRow | undefined {
 
 export function updateCard(input: {
   id: string;
+  code: string;
   title: string;
   oddsWeight: number;
   rarity: string;
@@ -478,9 +571,10 @@ export function updateCard(input: {
   const oddsWeight = normalizeOddsWeight(input.oddsWeight);
   db.prepare(
     `UPDATE Card
-     SET title = ?, oddsWeight = ?, rarity = ?, flavorText = ?
+     SET code = ?, title = ?, oddsWeight = ?, rarity = ?, flavorText = ?
      WHERE id = ?`
   ).run(
+    input.code,
     input.title,
     oddsWeight,
     input.rarity || "N",
@@ -601,7 +695,9 @@ export function createAcquisition(input: {
 
 export type CollectedCard = CardRow & {
   castName: string;
+  castCode: string;
   storeName: string;
+  storeCode: string;
   type: string;
   acquiredOn: string;
   acquisitionCreatedAt: string;
@@ -612,7 +708,8 @@ export function listCollectionForDevice(deviceId: string): CollectedCard[] {
   return db
     .prepare(
       `SELECT
-         card.*, c.name as castName, s.name as storeName,
+         card.*, c.code as castCode, c.name as castName,
+         s.code as storeCode, s.name as storeName,
          a.type as type, a.acquiredOn as acquiredOn, a.createdAt as acquisitionCreatedAt
        FROM Acquisition a
        JOIN Card card ON card.id = a.cardId
@@ -643,6 +740,7 @@ export type StoreCollectionCard = CardRow & {
 
 export type StoreCollection = {
   storeId: string;
+  storeCode: string;
   storeName: string;
   totalCount: number;
   collectedCount: number;
@@ -654,8 +752,8 @@ export function listStoreCollectionsForDevice(
 ): StoreCollection[] {
   const db = getDb();
   const stores = db
-    .prepare("SELECT id, name FROM Store ORDER BY createdAt DESC")
-    .all() as { id: string; name: string }[];
+    .prepare("SELECT id, code, name FROM Store ORDER BY createdAt DESC")
+    .all() as { id: string; code: string; name: string }[];
 
   if (stores.length === 0) {
     return [];
@@ -663,7 +761,8 @@ export function listStoreCollectionsForDevice(
 
   const cardsWithAcquisitionStmt = db.prepare(
     `SELECT
-       card.*, c.name as castName, s.id as storeId, s.name as storeName,
+       card.*, c.code as castCode, c.name as castName,
+       s.id as storeId, s.code as storeCode, s.name as storeName,
        a.type as type, a.acquiredOn as acquiredOn, a.createdAt as acquisitionCreatedAt
      FROM Card card
      JOIN Cast c ON c.id = card.castId
@@ -680,7 +779,9 @@ export function listStoreCollectionsForDevice(
   );
 
   const cardsOnlyStmt = db.prepare(
-    `SELECT card.*, c.name as castName, s.id as storeId, s.name as storeName
+    `SELECT
+       card.*, c.code as castCode, c.name as castName,
+       s.id as storeId, s.code as storeCode, s.name as storeName
      FROM Card card
      JOIN Cast c ON c.id = card.castId
      JOIN Store s ON s.id = c.storeId
@@ -704,6 +805,7 @@ export function listStoreCollectionsForDevice(
     const collectedCount = cards.filter((card) => card.collected).length;
     return {
       storeId: store.id,
+      storeCode: store.code,
       storeName: store.name,
       totalCount: cards.length,
       collectedCount,

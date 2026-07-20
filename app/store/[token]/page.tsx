@@ -42,6 +42,7 @@ export default function StorePage({
   return (
     <StoreGacha
       storeId={store.id}
+      storeCode={store.code}
       storeName={store.name}
       casts={casts}
       randomDoneCard={randomDoneCard}

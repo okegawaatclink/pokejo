@@ -64,7 +64,9 @@ export default function CollectionGrid({
                   : "border-white/15 bg-white/5 hover:bg-white/10"
               }`}
             >
-              <p className="text-sm font-bold truncate">{store.storeName}</p>
+              <p className="text-sm font-bold truncate">
+                #{store.storeCode} {store.storeName}
+              </p>
               <span className="text-xs text-white/50">
                 {store.collectedCount}/{store.totalCount}
               </span>
@@ -74,7 +76,7 @@ export default function CollectionGrid({
       </div>
 
       <div className="text-sm text-white/70">
-        {selectedStore.storeName} のカード一覧（{selectedStore.collectedCount}/{selectedStore.totalCount}）
+        #{selectedStore.storeCode} {selectedStore.storeName} のカード一覧（{selectedStore.collectedCount}/{selectedStore.totalCount}）
       </div>
 
       {cards.length === 0 ? (

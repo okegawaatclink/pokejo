@@ -42,7 +42,9 @@ export default function CastPage({
   return (
     <CastGacha
       castId={cast.id}
+      castCode={cast.code}
       castName={cast.name}
+      storeCode={store?.code ?? ""}
       storeName={store?.name ?? ""}
       cards={cardsWithState}
       drawDoneCard={drawDoneCard}

@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
 
   const form = await req.formData();
   const castId = (form.get("castId") as string | null)?.trim();
+  const code = (form.get("code") as string | null)?.trim();
   const title = (form.get("title") as string | null)?.trim();
   const oddsWeightRaw = form.get("oddsWeight") as string | null;
   const rarity = (form.get("rarity") as string | null) || "N";
@@ -75,6 +76,7 @@ export async function POST(req: NextRequest) {
 
   const card = createCard({
     castId,
+    code,
     title,
     imageUrl: `/api/uploads/${fileName}`,
     oddsWeight,
@@ -92,13 +94,14 @@ export async function PATCH(req: NextRequest) {
 
   const body = await req.json().catch(() => null);
   const id = (body?.id as string | undefined)?.trim();
+  const code = (body?.code as string | undefined)?.trim();
   const title = (body?.title as string | undefined)?.trim();
   const oddsWeight = Number(body?.oddsWeight ?? "1");
   const rarity = (body?.rarity as string | undefined) || "N";
   const flavorText = (body?.flavorText as string | undefined) || undefined;
 
-  if (!id || !title) {
-    return NextResponse.json({ error: "id と title は必須です" }, { status: 400 });
+  if (!id || !code || !title) {
+    return NextResponse.json({ error: "id と code と title は必須です" }, { status: 400 });
   }
 
   if (!Number.isFinite(oddsWeight) || oddsWeight <= 0) {
@@ -108,7 +111,7 @@ export async function PATCH(req: NextRequest) {
     );
   }
 
-  const card = updateCard({ id, title, oddsWeight, rarity, flavorText });
+  const card = updateCard({ id, code, title, oddsWeight, rarity, flavorText });
   if (!card) {
     return NextResponse.json({ error: "カードが見つかりません" }, { status: 404 });
   }
