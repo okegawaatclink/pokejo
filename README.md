@@ -25,7 +25,7 @@ npm install
 npm run dev
 ```
 
-`http://localhost:3000` にアクセスしてください。
+`http://localhost:3000/pokejo` にアクセスしてください。
 
 本番起動する場合:
 

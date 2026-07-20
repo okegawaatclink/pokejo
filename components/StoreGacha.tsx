@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import PokeCard, { PokeCardData } from "./PokeCard";
 import Sparkles from "./Sparkles";
+import { BASE_PATH } from "@/lib/basePath";
 
 export default function StoreGacha({
   storeId,
@@ -27,7 +28,7 @@ export default function StoreGacha({
     setMessage(null);
 
     try {
-      const res = await fetch("/api/gacha/random", {
+      const res = await fetch(`${BASE_PATH}/api/gacha/random`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ storeId }),

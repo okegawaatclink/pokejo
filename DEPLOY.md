@@ -60,7 +60,7 @@ bash setup.sh
 ### 4. 動作確認（ローカルPCまたはブラウザ）
 
 ```
-http://ec2-57-183-16-181.ap-northeast-1.compute.amazonaws.com/
+http://ec2-57-183-16-181.ap-northeast-1.compute.amazonaws.com/pokejo
 ```
 
 が表示されればOKです。
@@ -101,6 +101,9 @@ sudo systemctl restart pokejou
 
 ## 既知の注意点
 
+- アプリは `next.config.js` の `basePath: "/pokejo"` によりサブパス配信されています。
+  ルート（`/`）ではなく、必ず `/pokejo` を付けたURLでアクセスしてください
+  （例: `http://<ホスト>/pokejo`）。この設定を変更した場合は再ビルドが必要です。
 - `data/app.db` はSQLiteファイルで、EC2上のEBSボリュームに保存されます（インスタンス
   terminate時は失われるため、必要であれば定期的にS3等へバックアップしてください）。
 - アップロード画像 (`public/uploads`) も同様にEBS上に保存されます。

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import PokeCard from "@/components/PokeCard";
+import { BASE_PATH } from "@/lib/basePath";
 
 type Store = {
   id: string;
@@ -79,7 +80,7 @@ export default function AdminPage() {
   }, []);
 
   async function verify(code: string) {
-    const res = await fetch("/api/admin/login", {
+    const res = await fetch(`${BASE_PATH}/api/admin/login`, {
       method: "POST",
       headers: { "x-admin-passcode": code },
     });
@@ -95,7 +96,7 @@ export default function AdminPage() {
   }
 
   async function loadStores(code = passcode) {
-    const res = await fetch("/api/admin/stores", {
+    const res = await fetch(`${BASE_PATH}/api/admin/stores`, {
       headers: { "x-admin-passcode": code },
     });
     if (res.ok) {
@@ -105,7 +106,7 @@ export default function AdminPage() {
   }
 
   async function loadCasts(storeId: string, code = passcode) {
-    const res = await fetch(`/api/admin/casts?storeId=${storeId}`, {
+    const res = await fetch(`${BASE_PATH}/api/admin/casts?storeId=${storeId}`, {
       headers: { "x-admin-passcode": code },
     });
     if (res.ok) {
@@ -115,7 +116,7 @@ export default function AdminPage() {
   }
 
   async function loadCards(castId: string, code = passcode) {
-    const res = await fetch(`/api/admin/cards?castId=${castId}`, {
+    const res = await fetch(`${BASE_PATH}/api/admin/cards?castId=${castId}`, {
       headers: { "x-admin-passcode": code },
     });
     if (res.ok) {
@@ -127,9 +128,9 @@ export default function AdminPage() {
   async function loadQr(token: string, target: "store" | "cast", code = passcode) {
     const currentOrigin = origin || (typeof window !== "undefined" ? window.location.origin : "");
     if (!currentOrigin) return;
-    const endpoint = `${currentOrigin}/${target}/${token}`;
+    const endpoint = `${currentOrigin}${BASE_PATH}/${target}/${token}`;
     const res = await fetch(
-      `/api/admin/qrcode?url=${encodeURIComponent(endpoint)}`,
+      `${BASE_PATH}/api/admin/qrcode?url=${encodeURIComponent(endpoint)}`,
       {
       headers: { "x-admin-passcode": code },
       }
@@ -172,7 +173,7 @@ export default function AdminPage() {
     setBusy(true);
     setNotice(null);
     try {
-      const res = await fetch("/api/admin/stores", {
+      const res = await fetch(`${BASE_PATH}/api/admin/stores`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -198,7 +199,7 @@ export default function AdminPage() {
     setBusy(true);
     setNotice(null);
     try {
-      const res = await fetch("/api/admin/casts", {
+      const res = await fetch(`${BASE_PATH}/api/admin/casts`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -226,7 +227,7 @@ export default function AdminPage() {
     setBusy(true);
     setNotice(null);
     try {
-      const res = await fetch("/api/admin/stores", {
+      const res = await fetch(`${BASE_PATH}/api/admin/stores`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -257,7 +258,7 @@ export default function AdminPage() {
     setBusy(true);
     setNotice(null);
     try {
-      const res = await fetch("/api/admin/casts", {
+      const res = await fetch(`${BASE_PATH}/api/admin/casts`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -303,7 +304,7 @@ export default function AdminPage() {
       fd.append("flavorText", cardForm.flavorText);
       fd.append("image", cardFile);
 
-      const res = await fetch("/api/admin/cards", {
+      const res = await fetch(`${BASE_PATH}/api/admin/cards`, {
         method: "POST",
         headers: { "x-admin-passcode": passcode },
         body: fd,

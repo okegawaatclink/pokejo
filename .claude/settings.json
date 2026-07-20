@@ -20,7 +20,18 @@
       "Bash(gh repo *)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" https://github.com/okegawaatclink/pokejo)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" https://api.github.com/repos/okegawaatclink/pokejo)",
-      "Bash(chmod +x /Users/oke/poke-jou-app/deploy/*.sh)"
+      "Bash(chmod +x /Users/oke/poke-jou-app/deploy/*.sh)",
+      "Bash(grep -rln 'fetch\\(`/\\\\|fetch\\(\"/\\\\|fetch\\('\"'\"'/' app components lib)",
+      "Bash(grep -n 'fetch\\(`/\\\\|fetch\\(\"/\\\\|fetch\\('\"'\"'/' /Users/oke/poke-jou-app/app/admin/page.tsx /Users/oke/poke-jou-app/components/CastGacha.tsx /Users/oke/poke-jou-app/components/StoreGacha.tsx)",
+      "Bash(grep -rn 'href=\"/\\\\|src=\"/\\\\|href={`/\\\\|src={`/' app components)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3055/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3055/pokejo)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3055/pokejo/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3055/pokejo/admin)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" -X POST http://localhost:3055/pokejo/api/admin/login)",
+      "Bash(curl -sI http://localhost:3055/pokejo/collection)",
+      "Bash(pkill -f \"next start -p 3055\")",
+      "Bash(grep -rln '\"/api\\\\|`/api\\\\|fetch\\(' /Users/oke/poke-jou-app/test)"
     ]
   }
 }

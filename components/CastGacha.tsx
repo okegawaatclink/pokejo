@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import PokeCard, { PokeCardData } from "./PokeCard";
 import Sparkles from "./Sparkles";
+import { BASE_PATH } from "@/lib/basePath";
 
 type CardState = PokeCardData & { collected: boolean };
 
@@ -38,7 +39,7 @@ export default function CastGacha({
     setMessage(null);
 
     try {
-      const res = await fetch("/api/gacha/targeted", {
+      const res = await fetch(`${BASE_PATH}/api/gacha/targeted`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ castId }),
