@@ -789,7 +789,7 @@ export function listStoreCollectionsForDevice(
      ORDER BY c.createdAt ASC, card.createdAt ASC`
   );
 
-  return stores.map((store) => {
+  return stores.flatMap((store) => {
     const rows = deviceId
       ? (cardsWithAcquisitionStmt.all(deviceId, store.id) as any[])
       : (cardsOnlyStmt.all(store.id) as any[]);
@@ -803,13 +803,15 @@ export function listStoreCollectionsForDevice(
     })) as StoreCollectionCard[];
 
     const collectedCount = cards.filter((card) => card.collected).length;
-    return {
+    if (collectedCount === 0) return [];
+
+    return [{
       storeId: store.id,
       storeCode: store.code,
       storeName: store.name,
       totalCount: cards.length,
       collectedCount,
       cards,
-    };
+    }];
   });
 }
