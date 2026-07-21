@@ -40,7 +40,7 @@ export default function CastGacha({
   }
 
   async function handleDraw() {
-    if ((mode === "daily" && drawnCard) || loading) return;
+    if (drawnCard || loading) return;
     setLoading(true);
     setMessage(null);
 
@@ -97,13 +97,14 @@ export default function CastGacha({
 
       <button
         onClick={handleDraw}
-        disabled={(mode === "daily" && !!drawnCard) || loading}
+        disabled={!!drawnCard || loading}
         className="btn-gold px-3 py-4 text-sm text-black disabled:bg-stone-200 disabled:text-muted"
       >
         {mode === "paid" ? "有料QRで1枚入手" : "嬢QRで1枚入手"}
-        {mode === "daily" && drawnCard && (
+        {drawnCard && (
           <span className="block text-[10px] font-normal mt-1">
-            本日入手済み：{drawnCard.title ?? drawnCard.name}
+            {mode === "paid" ? "このQRで入手済み" : "本日入手済み"}：
+            {drawnCard.title ?? drawnCard.name}
           </span>
         )}
       </button>
