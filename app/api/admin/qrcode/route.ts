@@ -21,23 +21,28 @@ export async function GET(req: NextRequest) {
   }
 
   if (!url) {
-  const token = req.nextUrl.searchParams.get("token");
-  const target = req.nextUrl.searchParams.get("target") || "store";
-  if (!token) {
-    return NextResponse.json({ error: "token is required" }, { status: 400 });
-  }
+    const token = req.nextUrl.searchParams.get("token");
+    const target = req.nextUrl.searchParams.get("target") || "store";
+    if (!token) {
+      return NextResponse.json({ error: "token is required" }, { status: 400 });
+    }
 
-  if (target !== "store" && target !== "cast") {
-    return NextResponse.json({ error: "target is invalid" }, { status: 400 });
-  }
+    if (target !== "store" && target !== "cast") {
+      return NextResponse.json({ error: "target is invalid" }, { status: 400 });
+    }
 
     url = `${req.nextUrl.origin}/${target}/${token}`;
+  }
+
+  const darkColor = req.nextUrl.searchParams.get("dark") || "#0f172a";
+  if (!/^#[0-9a-f]{6}$/i.test(darkColor)) {
+    return NextResponse.json({ error: "dark color is invalid" }, { status: 400 });
   }
 
   const buffer = await QRCode.toBuffer(url, {
     width: 320,
     margin: 2,
-    color: { dark: "#0f172a", light: "#ffffff" },
+    color: { dark: darkColor, light: "#ffffff" },
   });
 
   return new NextResponse(new Uint8Array(buffer), {

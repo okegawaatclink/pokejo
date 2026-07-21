@@ -56,6 +56,7 @@ export default function AdminPage() {
   const [cards, setCards] = useState<Card[]>([]);
   const [storeQrUrl, setStoreQrUrl] = useState<string | null>(null);
   const [castQrUrl, setCastQrUrl] = useState<string | null>(null);
+  const [paidCastQrUrl, setPaidCastQrUrl] = useState<string | null>(null);
 
   const [newStoreName, setNewStoreName] = useState("");
   const [newStoreCode, setNewStoreCode] = useState("");
@@ -156,12 +157,13 @@ export default function AdminPage() {
     }
   }
 
-  async function loadQr(token: string, target: "store" | "cast", code = passcode) {
+  async function loadQr(token: string, target: "store" | "cast" | "paid", code = passcode) {
     const currentOrigin = origin || (typeof window !== "undefined" ? window.location.origin : "");
     if (!currentOrigin) return;
     const endpoint = `${currentOrigin}${BASE_PATH}/${target}/${token}`;
+    const darkColor = target === "paid" ? "#dc2626" : "#0f172a";
     const res = await fetch(
-      `${BASE_PATH}/api/admin/qrcode?url=${encodeURIComponent(endpoint)}`,
+      `${BASE_PATH}/api/admin/qrcode?url=${encodeURIComponent(endpoint)}&dark=${encodeURIComponent(darkColor)}`,
       {
       headers: { "x-admin-passcode": code },
       }
@@ -171,8 +173,10 @@ export default function AdminPage() {
       const objectUrl = URL.createObjectURL(blob);
       if (target === "store") {
         setStoreQrUrl(objectUrl);
-      } else {
+      } else if (target === "cast") {
         setCastQrUrl(objectUrl);
+      } else {
+        setPaidCastQrUrl(objectUrl);
       }
     }
   }
@@ -188,6 +192,7 @@ export default function AdminPage() {
     setCardEditForms({});
     setStoreQrUrl(null);
     setCastQrUrl(null);
+    setPaidCastQrUrl(null);
     loadCasts(store.id);
     loadQr(store.qrToken, "store");
   }
@@ -199,8 +204,10 @@ export default function AdminPage() {
     setCards([]);
     setCardEditForms({});
     setCastQrUrl(null);
+    setPaidCastQrUrl(null);
     loadCards(cast.id);
     loadQr(cast.qrToken, "cast");
+    loadQr(cast.qrToken, "paid");
   }
 
   function updateCardEditForm(cardId: string, patch: Partial<CardEditForm>) {
@@ -440,7 +447,7 @@ export default function AdminPage() {
 
   if (!authorized) {
     return (
-      <div className="max-w-sm mx-auto flex flex-col gap-4 py-10">
+      <div className="admin-screen max-w-sm mx-auto flex flex-col gap-4 py-10">
         <h1 className="text-xl font-bold text-center">管理画面ログイン</h1>
         <form
           onSubmit={(e) => {
@@ -454,7 +461,7 @@ export default function AdminPage() {
             value={passcode}
             onChange={(e) => setPasscode(e.target.value)}
             placeholder="パスコード"
-            className="rounded-lg bg-white/10 border border-white/10 px-3 py-2 text-sm outline-none focus:border-pikablue"
+            className="rounded-lg bg-white/10 border border-champagne/20 px-3 py-2 text-sm outline-none focus:border-pikablue"
           />
           <button className="rounded-lg bg-pikablue px-4 py-2 text-sm font-bold">
             ログイン
@@ -471,7 +478,7 @@ export default function AdminPage() {
   const selectedCast = casts.find((cast) => cast.id === selectedCastId) ?? null;
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="admin-screen flex flex-col gap-8">
       <h1 className="text-xl font-bold text-center">管理画面</h1>
 
       <section>
@@ -484,18 +491,18 @@ export default function AdminPage() {
               className={`text-left rounded-lg px-3 py-2 text-sm border ${
                 selectedStoreId === store.id
                   ? "border-pikablue bg-pikablue/10"
-                  : "border-white/10 bg-white/5"
+                  : "border-champagne/20 bg-white"
               }`}
             >
-              <span className="text-white/50 text-xs mr-2">#{store.code}</span>
+              <span className="text-muted text-xs mr-2">#{store.code}</span>
               {store.name}{" "}
-              <span className="text-white/40 text-xs">
+              <span className="text-muted text-xs">
                 （嬢 {store.castCount} 人 / カード {store.cardCount} 枚）
               </span>
             </button>
           ))}
           {stores.length === 0 && (
-            <p className="text-xs text-white/40">まだ店舗が登録されていません。</p>
+            <p className="text-xs text-muted">まだ店舗が登録されていません。</p>
           )}
         </div>
         <form onSubmit={handleCreateStore} className="flex gap-2">
@@ -503,13 +510,13 @@ export default function AdminPage() {
             value={newStoreCode}
             onChange={(e) => setNewStoreCode(e.target.value)}
             placeholder="番号"
-            className="w-20 rounded-lg bg-white/10 border border-white/10 px-3 py-2 text-sm outline-none focus:border-pikablue"
+            className="w-20 rounded-lg bg-white/10 border border-champagne/20 px-3 py-2 text-sm outline-none focus:border-pikablue"
           />
           <input
             value={newStoreName}
             onChange={(e) => setNewStoreName(e.target.value)}
             placeholder="新しい店舗名"
-            className="flex-1 rounded-lg bg-white/10 border border-white/10 px-3 py-2 text-sm outline-none focus:border-pikablue"
+            className="flex-1 rounded-lg bg-white/10 border border-champagne/20 px-3 py-2 text-sm outline-none focus:border-pikablue"
           />
           <button
             disabled={busy}
@@ -521,7 +528,7 @@ export default function AdminPage() {
       </section>
 
       {selectedStore && (
-        <section className="flex flex-col gap-4 border-t border-white/10 pt-6">
+        <section className="flex flex-col gap-4 border-t border-champagne/20 pt-6">
           <h2 className="font-bold text-sm">{selectedStore.name} の店舗QR</h2>
           {storeQrUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -531,9 +538,9 @@ export default function AdminPage() {
               className="w-48 h-48 bg-white rounded-lg p-2"
             />
           ) : (
-            <p className="text-xs text-white/40">読み込み中...</p>
+            <p className="text-xs text-muted">読み込み中...</p>
           )}
-          <p className="text-[11px] text-white/40 break-all">
+          <p className="text-[11px] text-muted break-all">
             エンドポイントURL: {origin ? `${origin}${BASE_PATH}/store/${selectedStore.qrToken}` : "取得中..."}
           </p>
 
@@ -543,17 +550,17 @@ export default function AdminPage() {
               value={editStoreCode}
               onChange={(e) => setEditStoreCode(e.target.value)}
               placeholder="番号"
-              className="w-20 rounded-lg bg-white/10 border border-white/10 px-3 py-2 text-sm outline-none focus:border-pikablue"
+              className="w-20 rounded-lg bg-white/10 border border-champagne/20 px-3 py-2 text-sm outline-none focus:border-pikablue"
             />
             <input
               value={editStoreName}
               onChange={(e) => setEditStoreName(e.target.value)}
               placeholder="店舗名"
-              className="flex-1 rounded-lg bg-white/10 border border-white/10 px-3 py-2 text-sm outline-none focus:border-pikablue"
+              className="flex-1 rounded-lg bg-white/10 border border-champagne/20 px-3 py-2 text-sm outline-none focus:border-pikablue"
             />
             <button
               disabled={busy}
-              className="rounded-lg bg-white/20 px-4 py-2 text-sm font-bold disabled:opacity-50"
+              className="rounded-lg bg-paper border border-champagne/30 px-4 py-2 text-sm font-bold disabled:opacity-50"
             >
               変更
             </button>
@@ -565,13 +572,13 @@ export default function AdminPage() {
               value={newCastCode}
               onChange={(e) => setNewCastCode(e.target.value)}
               placeholder="嬢番号（空欄なら自動採番）"
-              className="rounded-lg bg-white/10 border border-white/10 px-3 py-2 text-sm outline-none focus:border-pikablue"
+              className="rounded-lg bg-white/10 border border-champagne/20 px-3 py-2 text-sm outline-none focus:border-pikablue"
             />
             <input
               value={newCastName}
               onChange={(e) => setNewCastName(e.target.value)}
               placeholder="嬢の名前"
-              className="rounded-lg bg-white/10 border border-white/10 px-3 py-2 text-sm outline-none focus:border-pikablue"
+              className="rounded-lg bg-white/10 border border-champagne/20 px-3 py-2 text-sm outline-none focus:border-pikablue"
             />
             <button
               disabled={busy}
@@ -592,23 +599,23 @@ export default function AdminPage() {
                 className={`text-left rounded-lg px-3 py-2 text-sm border ${
                   selectedCastId === cast.id
                     ? "border-pokegold bg-pokegold/10"
-                    : "border-white/10 bg-white/5"
+                    : "border-champagne/20 bg-white"
                 }`}
               >
-                <span className="text-white/50 text-xs mr-2">#{cast.code}</span>
+                <span className="text-muted text-xs mr-2">#{cast.code}</span>
                 {cast.name}
-                <span className="text-white/40 text-xs ml-2">
+                <span className="text-muted text-xs ml-2">
                   （カード {cast.cardCount} 枚）
                 </span>
               </button>
             ))}
             {casts.length === 0 && (
-              <p className="text-xs text-white/40">まだ嬢が登録されていません。</p>
+              <p className="text-xs text-muted">まだ嬢が登録されていません。</p>
             )}
           </div>
 
           {selectedCast && (
-            <div className="flex flex-col gap-4 border-t border-white/10 pt-6">
+            <div className="flex flex-col gap-4 border-t border-champagne/20 pt-6">
               <h2 className="font-bold text-sm">{selectedCast.name} の嬢QR</h2>
               {castQrUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -618,10 +625,28 @@ export default function AdminPage() {
                   className="w-48 h-48 bg-white rounded-lg p-2"
                 />
               ) : (
-                <p className="text-xs text-white/40">読み込み中...</p>
+                <p className="text-xs text-muted">読み込み中...</p>
               )}
-              <p className="text-[11px] text-white/40 break-all">
+              <p className="text-[11px] text-muted break-all">
                 エンドポイントURL: {origin ? `${origin}${BASE_PATH}/cast/${selectedCast.qrToken}` : "取得中..."}
+              </p>
+
+              <h2 className="font-bold text-sm mt-4">{selectedCast.name} の有料QR</h2>
+              {paidCastQrUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={paidCastQrUrl}
+                  alt="有料QRコード"
+                  className="w-48 h-48 bg-white rounded-lg p-2"
+                />
+              ) : (
+                <p className="text-xs text-muted">読み込み中...</p>
+              )}
+              <p className="text-[11px] text-muted break-all">
+                エンドポイントURL: {origin ? `${origin}${BASE_PATH}/paid/${selectedCast.qrToken}` : "取得中..."}
+              </p>
+              <p className="text-[11px] text-muted">
+                レジ販売用です。通常の嬢QRの1日1回制限とは別に抽選できます。
               </p>
 
               <h2 className="font-bold text-sm mt-2">嬢名を変更</h2>
@@ -630,17 +655,17 @@ export default function AdminPage() {
                   value={editCastCode}
                   onChange={(e) => setEditCastCode(e.target.value)}
                   placeholder="番号"
-                  className="w-20 rounded-lg bg-white/10 border border-white/10 px-3 py-2 text-sm outline-none focus:border-pikablue"
+                  className="w-20 rounded-lg bg-white/10 border border-champagne/20 px-3 py-2 text-sm outline-none focus:border-pikablue"
                 />
                 <input
                   value={editCastName}
                   onChange={(e) => setEditCastName(e.target.value)}
                   placeholder="嬢の名前"
-                  className="flex-1 rounded-lg bg-white/10 border border-white/10 px-3 py-2 text-sm outline-none focus:border-pikablue"
+                  className="flex-1 rounded-lg bg-white/10 border border-champagne/20 px-3 py-2 text-sm outline-none focus:border-pikablue"
                 />
                 <button
                   disabled={busy}
-                  className="rounded-lg bg-white/20 px-4 py-2 text-sm font-bold disabled:opacity-50"
+                  className="rounded-lg bg-paper border border-champagne/30 px-4 py-2 text-sm font-bold disabled:opacity-50"
                 >
                   変更
                 </button>
@@ -654,7 +679,7 @@ export default function AdminPage() {
                     setCardForm((form) => ({ ...form, code: e.target.value }))
                   }
                   placeholder="カード番号（空欄なら自動採番）"
-                  className="rounded-lg bg-white/10 border border-white/10 px-3 py-2 text-sm outline-none focus:border-pikablue"
+                  className="rounded-lg bg-white/10 border border-champagne/20 px-3 py-2 text-sm outline-none focus:border-pikablue"
                 />
                 <input
                   value={cardForm.title}
@@ -662,7 +687,7 @@ export default function AdminPage() {
                     setCardForm((form) => ({ ...form, title: e.target.value }))
                   }
                   placeholder="カード種類名"
-                  className="rounded-lg bg-white/10 border border-white/10 px-3 py-2 text-sm outline-none focus:border-pikablue"
+                  className="rounded-lg bg-white/10 border border-champagne/20 px-3 py-2 text-sm outline-none focus:border-pikablue"
                 />
                 <input
                   type="number"
@@ -673,14 +698,14 @@ export default function AdminPage() {
                     setCardForm((form) => ({ ...form, oddsWeight: e.target.value }))
                   }
                   placeholder="当選確率(重み) 例: 1"
-                  className="rounded-lg bg-white/10 border border-white/10 px-3 py-2 text-sm outline-none focus:border-pikablue"
+                  className="rounded-lg bg-white/10 border border-champagne/20 px-3 py-2 text-sm outline-none focus:border-pikablue"
                 />
                 <select
                   value={cardForm.rarity}
                   onChange={(e) =>
                     setCardForm((form) => ({ ...form, rarity: e.target.value }))
                   }
-                  className="rounded-lg bg-white/10 border border-white/10 px-3 py-2 text-sm outline-none"
+                  className="rounded-lg bg-white/10 border border-champagne/20 px-3 py-2 text-sm outline-none"
                 >
                   {RARITIES.map((rarity) => (
                     <option key={rarity} value={rarity} className="text-black">
@@ -695,7 +720,7 @@ export default function AdminPage() {
                   }
                   placeholder="フレーバーテキスト（任意）"
                   rows={2}
-                  className="rounded-lg bg-white/10 border border-white/10 px-3 py-2 text-sm outline-none focus:border-pikablue"
+                  className="rounded-lg bg-white/10 border border-champagne/20 px-3 py-2 text-sm outline-none focus:border-pikablue"
                 />
                 <input
                   type="file"
@@ -727,7 +752,7 @@ export default function AdminPage() {
                       <PokeCard cast={card} />
                       <form
                         onSubmit={(e) => handleUpdateCard(e, card.id)}
-                        className="flex flex-col gap-2 rounded-lg border border-white/10 bg-white/5 p-2"
+                        className="flex flex-col gap-2 rounded-lg border border-champagne/20 bg-white p-2"
                       >
                         <input
                           value={editForm.code}
@@ -735,7 +760,7 @@ export default function AdminPage() {
                             updateCardEditForm(card.id, { code: e.target.value })
                           }
                           placeholder="カード番号"
-                          className="rounded bg-white/10 border border-white/10 px-2 py-1 text-xs outline-none focus:border-pikablue"
+                          className="rounded bg-white/10 border border-champagne/20 px-2 py-1 text-xs outline-none focus:border-pikablue"
                         />
                         <input
                           value={editForm.title}
@@ -743,7 +768,7 @@ export default function AdminPage() {
                             updateCardEditForm(card.id, { title: e.target.value })
                           }
                           placeholder="カード種類名"
-                          className="rounded bg-white/10 border border-white/10 px-2 py-1 text-xs outline-none focus:border-pikablue"
+                          className="rounded bg-white/10 border border-champagne/20 px-2 py-1 text-xs outline-none focus:border-pikablue"
                         />
                         <div className="grid grid-cols-2 gap-2">
                           <input
@@ -757,14 +782,14 @@ export default function AdminPage() {
                               })
                             }
                             placeholder="当選重み"
-                            className="rounded bg-white/10 border border-white/10 px-2 py-1 text-xs outline-none focus:border-pikablue"
+                            className="rounded bg-white/10 border border-champagne/20 px-2 py-1 text-xs outline-none focus:border-pikablue"
                           />
                           <select
                             value={editForm.rarity}
                             onChange={(e) =>
                               updateCardEditForm(card.id, { rarity: e.target.value })
                             }
-                            className="rounded bg-white/10 border border-white/10 px-2 py-1 text-xs outline-none"
+                            className="rounded bg-white/10 border border-champagne/20 px-2 py-1 text-xs outline-none"
                           >
                             {RARITIES.map((rarity) => (
                               <option key={rarity} value={rarity} className="text-black">
@@ -782,11 +807,11 @@ export default function AdminPage() {
                           }
                           placeholder="フレーバーテキスト（任意）"
                           rows={2}
-                          className="rounded bg-white/10 border border-white/10 px-2 py-1 text-xs outline-none focus:border-pikablue"
+                          className="rounded bg-white/10 border border-champagne/20 px-2 py-1 text-xs outline-none focus:border-pikablue"
                         />
                         <button
                           disabled={busy}
-                          className="rounded bg-white/20 px-3 py-1.5 text-xs font-bold disabled:opacity-50"
+                          className="rounded bg-paper border border-champagne/30 px-3 py-1.5 text-xs font-bold disabled:opacity-50"
                         >
                           更新
                         </button>
@@ -795,7 +820,7 @@ export default function AdminPage() {
                   );
                 })}
                 {cards.length === 0 && (
-                  <p className="text-xs text-white/40 col-span-full">
+                  <p className="text-xs text-muted col-span-full">
                     まだカードがありません。
                   </p>
                 )}

@@ -14,6 +14,7 @@ function acquisitionLabel(type: string | null) {
   if (!type) return "-";
   if (type === "store") return "店舗QR";
   if (type === "cast") return "嬢QR";
+  if (type === "paid_cast") return "有料QR";
   if (type === "random") return "ランダム入手";
   if (type === "targeted") return "指名入手";
   return type;
@@ -31,8 +32,8 @@ export default function CollectionGrid({
 
   if (stores.length === 0) {
     return (
-      <p className="text-sm text-white/50 text-center py-10">
-        まだ店舗やカードが登録されていません。
+      <p className="surface-card text-sm text-muted text-center py-10 px-6">
+        まだ入手済みのカードがありません。
       </p>
     );
   }
@@ -47,9 +48,9 @@ export default function CollectionGrid({
 
   return (
     <>
-      <div className="flex flex-col gap-2">
-        <p className="text-sm font-bold">お店を選択</p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <div className="flex flex-col gap-4">
+        <p className="text-sm font-bold text-ink">お店を選択</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           {stores.map((store) => (
             <button
               key={store.storeId}
@@ -58,16 +59,16 @@ export default function CollectionGrid({
                 setSelectedStoreId(store.storeId);
                 setSelected(null);
               }}
-              className={`rounded-2xl border p-3 text-left min-h-[96px] flex flex-col justify-between transition-colors ${
+              className={`rounded-xl border p-4 text-left min-h-[104px] flex flex-col justify-between transition-colors ${
                 selectedStore.storeId === store.storeId
-                  ? "border-pokepink bg-pokepink/15"
-                  : "border-white/15 bg-white/5 hover:bg-white/10"
+                  ? "border-champagne bg-paper"
+                  : "border-champagne/20 bg-white hover:bg-paper"
               }`}
             >
               <p className="text-sm font-bold truncate">
                 #{store.storeCode} {store.storeName}
               </p>
-              <span className="text-xs text-white/50">
+              <span className="text-xs text-muted">
                 {store.collectedCount}/{store.totalCount}
               </span>
             </button>
@@ -75,16 +76,16 @@ export default function CollectionGrid({
         </div>
       </div>
 
-      <div className="text-sm text-white/70">
+      <div className="text-sm text-muted">
         #{selectedStore.storeCode} {selectedStore.storeName} のカード一覧（{selectedStore.collectedCount}/{selectedStore.totalCount}）
       </div>
 
       {cards.length === 0 ? (
-        <p className="text-sm text-white/50 text-center py-8">
+        <p className="text-sm text-muted text-center py-8">
           この店舗にはまだカードが登録されていません。
         </p>
       ) : (
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         {cards.map((c) => (
           <PokeCard
             key={c.id}
@@ -98,7 +99,7 @@ export default function CollectionGrid({
 
       {selectedCard && (
         <div
-          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-stone-950/78 flex items-center justify-center p-4"
           onClick={() => setSelected(null)}
         >
           <div
@@ -110,16 +111,16 @@ export default function CollectionGrid({
               <PokeCard cast={selectedCard} />
             </div>
             {selectedCard.flavorText && (
-              <p className="relative text-xs text-white/60 max-w-xs text-center">
+              <p className="relative text-xs text-white/80 max-w-xs text-center">
                 {selectedCard.flavorText}
               </p>
             )}
-            <p className="relative text-[11px] text-white/40">
+            <p className="relative text-[11px] text-white/70">
               入手日: {selectedCard.acquiredOn} / {acquisitionLabel(selectedCard.type)}
             </p>
             <button
               onClick={() => setSelected(null)}
-              className="relative rounded-lg bg-white/10 px-4 py-2 text-sm"
+              className="relative rounded-lg bg-white px-4 py-2 text-sm text-ink"
             >
               閉じる
             </button>

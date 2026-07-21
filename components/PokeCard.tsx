@@ -52,14 +52,14 @@ export default function PokeCard({
       disabled={!onClick}
       className={`poke-card rarity-${cast.rarity} ${
         locked ? "locked" : ""
-      } ${sizeClass} rounded-2xl p-2 flex flex-col text-left transition-transform ${
+      } ${sizeClass} rounded-xl p-2 flex flex-col text-left transition-transform ${
         onClick ? "hover:-translate-y-1 active:translate-y-0 cursor-pointer" : "cursor-default"
       }`}
     >
-      <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-black/40">
+      <div className="relative aspect-[3/4] w-full overflow-hidden rounded-lg bg-stone-100">
         {locked ? (
-          <div className="w-full h-full flex items-center justify-center text-3xl">
-            ❔
+          <div className="w-full h-full flex items-center justify-center text-3xl text-muted">
+            ？
           </div>
         ) : (
           <Image
@@ -80,21 +80,21 @@ export default function PokeCard({
               ? "bg-gold-shine text-black shadow-glow"
               : cast.rarity === "SR"
               ? "bg-pink-gold text-black"
-              : "bg-black/60 text-white"
+              : "bg-white/90 text-ink"
           }`}
         >
           {RARITY_LABEL[cast.rarity] ?? cast.rarity}
         </span>
       </div>
       <div className="mt-2 px-1">
-        <p className="font-display font-bold text-sm truncate">
+        <p className="font-display font-bold text-sm truncate text-ink">
           {locked ? "？？？" : `${cast.code ? `#${cast.code} ` : ""}${title}`}
         </p>
         {subtitle && (
-          <p className="text-[11px] text-white/60 truncate">{subtitle}</p>
+          <p className="text-[11px] text-muted truncate">{subtitle}</p>
         )}
         {storeLabel && (
-          <p className="text-[11px] text-white/40 truncate">{storeLabel}</p>
+          <p className="text-[11px] text-muted/80 truncate">{storeLabel}</p>
         )}
       </div>
     </button>

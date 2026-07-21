@@ -24,20 +24,20 @@ export default function RootLayout({
   return (
     <html lang="ja" className={displayFont.variable}>
       <body className="min-h-screen flex flex-col">
-        <header className="border-b border-white/10 bg-black/30 backdrop-blur sticky top-0 z-20">
-          <div className="max-w-3xl mx-auto px-4 py-3 flex items-center">
+        <header className="border-b border-champagne/20 bg-white/85 backdrop-blur sticky top-0 z-20">
+          <div className="max-w-4xl mx-auto px-5 sm:px-8 py-4 flex items-center">
             <Link
               href="/"
               className="text-lg font-display font-extrabold tracking-wide text-gradient-gold"
             >
-              ✨ ポケ嬢
+              ポケ嬢
             </Link>
           </div>
         </header>
-        <main className="flex-1 max-w-3xl w-full mx-auto px-4 py-6">
+        <main className="flex-1 max-w-4xl w-full mx-auto px-5 sm:px-8 py-10 sm:py-14">
           {children}
         </main>
-        <footer className="text-center text-xs text-white/30 py-6">
+        <footer className="text-center text-xs text-muted py-8">
           ポケ嬢 - プロトタイプ版
         </footer>
       </body>

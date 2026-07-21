@@ -16,10 +16,10 @@ export default function CollectionPage() {
   );
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="text-center">
+    <div className="flex flex-col gap-8">
+      <div className="text-center py-4">
         <h1 className="text-2xl font-display font-extrabold text-gradient-gold">コレクション</h1>
-        <p className="text-xs text-white/50 mt-1">
+        <p className="text-xs text-muted mt-2">
           全{totalCount}枚中 {collectedCount}枚を入手済み
         </p>
       </div>

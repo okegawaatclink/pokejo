@@ -14,6 +14,7 @@
 
 ## 技術構成
 
+a
 - Next.js 14 (App Router) / React / TypeScript / Tailwind CSS
 - DB: `better-sqlite3` によるローカルSQLite
 - QRコード生成: `qrcode` / QR読み取り: `html5-qrcode`（ブラウザカメラ使用）

@@ -26,7 +26,7 @@ export default function StorePage({
     return (
       <div className="text-center py-16">
         <p className="text-lg font-bold mb-2">店舗が見つかりませんでした</p>
-        <p className="text-sm text-white/50">
+        <p className="text-sm text-muted">
           QRコードが正しいかご確認ください。
         </p>
       </div>
