@@ -584,7 +584,7 @@ export function updateCard(input: {
   return getCardById(input.id);
 }
 
-export type AcquisitionType = "store" | "cast";
+export type AcquisitionType = "store" | "cast" | "paid_cast";
 
 export type AcquisitionRow = {
   id: string;
